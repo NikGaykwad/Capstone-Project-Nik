@@ -7,9 +7,6 @@ pipeline {
         SONAR_HOST_URL = 'http://43.205.183.138:9000/'
         DOCKER_IMAGE = "nikhilg032/boardgame-webapp"
         DOCKER_CREDENTIALS_ID = 'Docker-Access-Token'
-        
-        // Dynamically fetch EC2 Public IP from Terraform
-        EC2_PUBLIC_IP = sh(script: "terraform output -raw public_ip", returnStdout: true).trim()
     }
 
     stages {
@@ -25,6 +22,19 @@ pipeline {
                             terraform apply -auto-approve || { echo "Terraform failed!" && exit 1; }
                         '''
                     }
+                }
+            }
+        }
+
+        stage('Get EC2 Public IP') {
+            steps {
+                script {
+                    def ip = sh(
+                        script: "cd /home/ubuntu/board-game-project/terraform && terraform output -raw public_ip",
+                        returnStdout: true
+                    ).trim()
+                    env.EC2_PUBLIC_IP = ip
+                    echo "✅ EC2 Public IP: ${env.EC2_PUBLIC_IP}"
                 }
             }
         }
@@ -113,7 +123,7 @@ pipeline {
         stage('Post-deploy Health Check') {
             steps {
                 sh '''
-                    for i in {1..5}; do 
+                    for i in {1..5}; do
                         curl -f http://$EC2_PUBLIC_IP:8080/actuator/health && break || sleep 5
                     done
                 '''
@@ -130,3 +140,4 @@ pipeline {
         }
     }
 }
+
