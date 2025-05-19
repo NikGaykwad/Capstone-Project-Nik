@@ -1,18 +1,23 @@
----
 - hosts: webserver
   become: yes
+  vars:
+    docker_image: "nikhilg032/boardgame-webapp"
+    docker_tag: "{{ build_number }}"  # gets value from Jenkins
+
   tasks:
     - name: Install Docker
       apt:
         name: docker.io
         state: present
+        update_cache: yes
 
-    - name: Pull latest Docker image
-      command: docker pull <your-dockerhub-username>/boardgame-app
+    - name: Pull Docker image
+      command: docker pull {{ docker_image }}:{{ docker_tag }}
 
-    - name: Stop existing container
+    - name: Stop existing container if running
       command: docker rm -f webapp || true
 
-    - name: Run new container
-      command: docker run -d --name webapp -p 8080:8080 <your-dockerhub-username>/boardgame-app
+    - name: Run Docker container
+      command: docker run -d --name webapp -p 8080:8080 {{ docker_image }}:{{ docker_tag }}
+
 
