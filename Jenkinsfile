@@ -7,20 +7,45 @@ pipeline {
         SONAR_HOST_URL = 'http://43.205.183.138:9000/'
         DOCKER_IMAGE = "nikhilg032/boardgame-webapp"
         DOCKER_CREDENTIALS_ID = 'Docker-Access-Token'
+
+        // Dynamically fetch EC2 Public IP from Terraform
+        EC2_PUBLIC_IP = sh(script: "terraform output -raw instance_public_ip", returnStdout: true).trim()
     }
 
     stages {
-        stage('Terraform Apply (Infra Provision)') {
+        stage('Clone Repository') {
             steps {
-                dir('/home/ubuntu/board-game-project/terraform/') {
-                    withCredentials([[
-                        $class: 'AmazonWebServicesCredentialsBinding',
-                        credentialsId: 'aws-credentials'
-                    ]]) {
-                        sh '''
-                            terraform init
-                            terraform apply -auto-approve || { echo "Terraform failed!" && exit 1; }
-                        '''
+                git branch: 'main', url: 'https://github.com/NikGaykwad/Capstone-Project-Nik.git'
+            }
+        }
+
+        stage('Initialize Terraform') {
+            steps {
+                withCredentials([aws(credentialsId: 'aws-credentials')]) {
+                    script {
+                        dir('/home/ubuntu/board-game-project/terraform/') {
+                            sh '''
+                                export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                                export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                                terraform init
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Apply - Provision EC2 Instance') {
+            steps {
+                withCredentials([aws(credentialsId: 'aws-credentials')]) {
+                    script {
+                        dir('/home/ubuntu/board-game-project/terraform/') {
+                            sh '''
+                                export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                                export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                                terraform apply -auto-approve
+                            '''
+                        }
                     }
                 }
             }
@@ -29,19 +54,20 @@ pipeline {
         stage('Get EC2 Public IP') {
             steps {
                 script {
-                    def ip = sh(
-                        script: "cd /home/ubuntu/board-game-project/terraform && terraform output -raw public_ip",
-                        returnStdout: true
-                    ).trim()
-                    env.EC2_PUBLIC_IP = ip
-                    echo "✅ EC2 Public IP: ${env.EC2_PUBLIC_IP}"
+                    dir('/home/ubuntu/board-game-project/terraform/') {
+                        def output = sh(script: 'terraform output -raw instance_public_ip', returnStdout: true).trim()
+                        env.INSTANCE_IP = output
+                        echo "New EC2 Instance IP: ${env.INSTANCE_IP}"
+                    }
                 }
             }
         }
 
-        stage('Checkout Source') {
+        stage('Wait for EC2 to be Ready') {
             steps {
-                git branch: 'main', credentialsId: 'github-credentials', url: 'https://github.com/NikGaykwad/Capstone-Project-Nik.git'
+                script {
+                    sleep(30)  // Wait for setup completion
+                }
             }
         }
 
@@ -123,7 +149,7 @@ pipeline {
         stage('Post-deploy Health Check') {
             steps {
                 sh '''
-                    for i in {1..5}; do
+                    for i in {1..5}; do 
                         curl -f http://$EC2_PUBLIC_IP:8080/actuator/health && break || sleep 5
                     done
                 '''
@@ -133,7 +159,7 @@ pipeline {
 
     post {
         failure {
-            echo '❌ Pipeline failed! Check the logs.'
+            echo '❌ Pipeline failed! Check logs.'
         }
         success {
             echo '✅ Deployment successful 🚀'
