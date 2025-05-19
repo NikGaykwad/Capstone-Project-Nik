@@ -1,0 +1,18 @@
+---
+- hosts: webserver
+  become: yes
+  tasks:
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+
+    - name: Pull latest Docker image
+      command: docker pull <your-dockerhub-username>/boardgame-app
+
+    - name: Stop existing container
+      command: docker rm -f webapp || true
+
+    - name: Run new container
+      command: docker run -d --name webapp -p 8080:8080 <your-dockerhub-username>/boardgame-app
+

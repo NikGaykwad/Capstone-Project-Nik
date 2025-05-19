@@ -1,0 +1,9 @@
+/home/ubuntu/board-game/app/BoardGame/src/main/java/com/javaproject/beans/BoardGame.java
+/home/ubuntu/board-game/app/BoardGame/src/main/java/com/javaproject/database/DatabaseAccess.java
+/home/ubuntu/board-game/app/BoardGame/src/main/java/com/javaproject/beans/Review.java
+/home/ubuntu/board-game/app/BoardGame/src/main/java/com/javaproject/controllers/HomeController.java
+/home/ubuntu/board-game/app/BoardGame/src/main/java/com/javaproject/beans/ErrorMessage.java
+/home/ubuntu/board-game/app/BoardGame/src/main/java/com/javaproject/DatabaseServiceProjectApplication.java
+/home/ubuntu/board-game/app/BoardGame/src/main/java/com/javaproject/security/LoggingAccessDeniedHandler.java
+/home/ubuntu/board-game/app/BoardGame/src/main/java/com/javaproject/controllers/BoardGameController.java
+/home/ubuntu/board-game/app/BoardGame/src/main/java/com/javaproject/security/SecurityConfig.java

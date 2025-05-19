@@ -1,0 +1,9 @@
+com/javaproject/controllers/HomeController.class
+com/javaproject/database/DatabaseAccess.class
+com/javaproject/security/SecurityConfig.class
+com/javaproject/controllers/BoardGameController.class
+com/javaproject/beans/Review.class
+com/javaproject/beans/ErrorMessage.class
+com/javaproject/DatabaseServiceProjectApplication.class
+com/javaproject/beans/BoardGame.class
+com/javaproject/security/LoggingAccessDeniedHandler.class
