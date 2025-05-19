@@ -19,7 +19,7 @@ pipeline {
                     withCredentials([[
                         $class: 'AmazonWebServicesCredentialsBinding',
                         credentialsId: 'aws-credentials'
-                    ]]) {IP
+                    ]]) {
                         sh '''
                             terraform init
                             terraform apply -auto-approve || { echo "Terraform failed!" && exit 1; }
