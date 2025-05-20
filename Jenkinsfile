@@ -20,7 +20,7 @@ pipeline {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials']]) {
                     script {
-                        dir('/home/ubuntu/project/Capstone-Project-Nik/terraform') {
+                        dir('terraform') {
                             sh '''
                                 export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
                                 export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
@@ -36,7 +36,7 @@ pipeline {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials']]) {
                     script {
-                        dir('/home/ubuntu/project/Capstone-Project-Nik/terraform') {
+                        dir('terraform') {
                             sh '''
                                 export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
                                 export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
@@ -51,7 +51,7 @@ pipeline {
         stage('Get EC2 Public IP') {
             steps {
                 script {
-                    dir('/home/ubuntu/project/Capstone-Project-Nik/terraform') {
+                    dir('terraform') {
                         def output = sh(script: 'terraform output -raw instance_public_ip', returnStdout: true).trim()
                         env.INSTANCE_IP = output
                         echo "✅ EC2 Instance IP: ${env.INSTANCE_IP}"
@@ -130,7 +130,7 @@ pipeline {
 
         stage('Update Ansible Inventory & Deploy') {
             steps {
-                dir('/home/ubuntu/project/Capstone-Project-Nik/ansible') {
+                dir('ansible') {
                     script {
                         // Inject EC2 IP dynamically into inventory.ini
                         sh """
