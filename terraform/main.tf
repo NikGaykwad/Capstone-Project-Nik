@@ -4,7 +4,7 @@ locals {
   subnet_id        = "subnet-04d562ce923deb26a"
   ssh_user         = "ubuntu"
   key_name         = "lab1"
-  private_key_path = "/home/ubuntu/.ssh/lab1.pem"  # Path of the key
+  private_key_path = "/var/lib/jenkins/.ssh/lab1.pem"  # Path of the key
 }
 
 # AWS provider block
