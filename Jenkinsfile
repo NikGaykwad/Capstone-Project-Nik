@@ -4,26 +4,23 @@ pipeline {
     environment {
         AWS_REGION = 'ap-south-1'
         SONAR_PROJECT_KEY = 'sonar'
-        SONAR_HOST_URL = 'http://43.205.183.138:9000/'
+        SONAR_HOST_URL = 'http://3.111.185.253:9000/'
         DOCKER_IMAGE = "nikhilg032/boardgame-webapp"
         DOCKER_CREDENTIALS_ID = 'Docker-Access-Token'
-
-        // Dynamically fetch EC2 Public IP from Terraform
-        EC2_PUBLIC_IP = sh(script: "terraform output -raw instance_public_ip", returnStdout: true).trim()
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/NikGaykwad/Capstone-Project-Nik.git'
+                git branch: 'main', credentialsId: 'github-credentials', url: 'https://github.com/NikGaykwad/Capstone-Project-Nik.git'
             }
         }
 
         stage('Initialize Terraform') {
             steps {
-                withCredentials([aws(credentialsId: 'aws-credentials')]) {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials']]) {
                     script {
-                        dir('/home/ubuntu/board-game-project/terraform/') {
+                        dir('/home/ubuntu/project/Capstone-Project-Nik/terraform') {
                             sh '''
                                 export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
                                 export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
@@ -37,9 +34,9 @@ pipeline {
 
         stage('Terraform Apply - Provision EC2 Instance') {
             steps {
-                withCredentials([aws(credentialsId: 'aws-credentials')]) {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials']]) {
                     script {
-                        dir('/home/ubuntu/board-game-project/terraform/') {
+                        dir('/home/ubuntu/project/Capstone-Project-Nik/terraform') {
                             sh '''
                                 export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
                                 export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
@@ -54,10 +51,10 @@ pipeline {
         stage('Get EC2 Public IP') {
             steps {
                 script {
-                    dir('/home/ubuntu/board-game-project/terraform/') {
+                    dir('/home/ubuntu/project/Capstone-Project-Nik/terraform') {
                         def output = sh(script: 'terraform output -raw instance_public_ip', returnStdout: true).trim()
                         env.INSTANCE_IP = output
-                        echo "New EC2 Instance IP: ${env.INSTANCE_IP}"
+                        echo "✅ EC2 Instance IP: ${env.INSTANCE_IP}"
                     }
                 }
             }
@@ -66,7 +63,7 @@ pipeline {
         stage('Wait for EC2 to be Ready') {
             steps {
                 script {
-                    sleep(30)  // Wait for setup completion
+                    sleep(30)
                 }
             }
         }
@@ -79,7 +76,7 @@ pipeline {
 
         stage('SonarQube Scan') {
             steps {
-                withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_LOGIN')]) {
+                withCredentials([string(credentialsId: 'Sonar', variable: 'SONAR_LOGIN')]) {
                     withSonarQubeEnv('SonarQube') {
                         sh '''
                             mvn sonar:sonar \
@@ -131,15 +128,22 @@ pipeline {
             }
         }
 
-        stage('Deploy to EC2 using Ansible') {
+        stage('Update Ansible Inventory & Deploy') {
             steps {
-                dir('ansible') {
+                dir('/home/ubuntu/project/Capstone-Project-Nik/ansible') {
+                    script {
+                        // Inject EC2 IP dynamically into inventory.ini
+                        sh """
+                            echo '[web]' > inventory.ini
+                            echo '${env.INSTANCE_IP} ansible_user=ubuntu' >> inventory.ini
+                        """
+                    }
                     withCredentials([sshUserPrivateKey(
-                        credentialsId: 'ec2-ssh-key',
+                        credentialsId: 'SSH-Key',
                         keyFileVariable: 'SSH_KEY'
                     )]) {
                         sh '''
-                            ansible-playbook -i inventory ansible-deploy.yml --private-key $SSH_KEY
+                            ansible-playbook -i inventory.ini ansible-deploy.yml --private-key $SSH_KEY
                         '''
                     }
                 }
@@ -148,11 +152,13 @@ pipeline {
 
         stage('Post-deploy Health Check') {
             steps {
-                sh '''
-                    for i in {1..5}; do 
-                        curl -f http://$EC2_PUBLIC_IP:8080/actuator/health && break || sleep 5
-                    done
-                '''
+                script {
+                    sh '''
+                        for i in {1..5}; do
+                            curl -f http://$INSTANCE_IP:8080/actuator/health && break || sleep 5
+                        done
+                    '''
+                }
             }
         }
     }

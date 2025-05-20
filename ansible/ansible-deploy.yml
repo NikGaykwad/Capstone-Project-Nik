@@ -1,23 +1,37 @@
-- hosts: webserver
+- hosts: web
   become: yes
   vars:
     docker_image: "nikhilg032/boardgame-webapp"
-    docker_tag: "{{ build_number }}"  # gets value from Jenkins
-
+    docker_tag: "{{ lookup('env', 'BUILD_NUMBER') }}"  # Fetches from Jenkins pipeline
+  
   tasks:
-    - name: Install Docker
+    - name: Ensure Docker is installed
       apt:
         name: docker.io
         state: present
         update_cache: yes
+    
+    - name: Ensure Docker service is running
+      service:
+        name: docker
+        state: started
+        enabled: yes
 
-    - name: Pull Docker image
-      command: docker pull {{ docker_image }}:{{ docker_tag }}
+    - name: Pull Docker image from registry
+      docker_image:
+        name: "{{ docker_image }}:{{ docker_tag }}"
+        source: pull
 
     - name: Stop existing container if running
-      command: docker rm -f webapp || true
+      docker_container:
+        name: webapp
+        state: absent
 
-    - name: Run Docker container
-      command: docker run -d --name webapp -p 8080:8080 {{ docker_image }}:{{ docker_tag }}
-
+    - name: Deploy application container
+      docker_container:
+        name: webapp
+        image: "{{ docker_image }}:{{ docker_tag }}"
+        state: started
+        ports:
+          - "8080:8080"
 
