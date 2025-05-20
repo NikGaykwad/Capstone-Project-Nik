@@ -7,6 +7,7 @@ pipeline {
         SONAR_HOST_URL = 'http://3.111.185.253:9000/'
         DOCKER_IMAGE = "nikhilg032/boardgame-webapp"
         DOCKER_CREDENTIALS_ID = 'Docker-Access-Token'
+        APP_DIR = 'app/BoardGame'
     }
 
     stages {
@@ -19,14 +20,12 @@ pipeline {
         stage('Initialize Terraform') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials']]) {
-                    script {
-                        dir('terraform') {
-                            sh '''
-                                export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-                                export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-                                terraform init
-                            '''
-                        }
+                    dir('terraform') {
+                        sh '''
+                            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                            terraform init
+                        '''
                     }
                 }
             }
@@ -35,14 +34,12 @@ pipeline {
         stage('Terraform Apply - Provision EC2 Instance') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials']]) {
-                    script {
-                        dir('terraform') {
-                            sh '''
-                                export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-                                export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-                                terraform apply -auto-approve
-                            '''
-                        }
+                    dir('terraform') {
+                        sh '''
+                            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                            terraform apply -auto-approve
+                        '''
                     }
                 }
             }
@@ -70,7 +67,9 @@ pipeline {
 
         stage('Build & Test') {
             steps {
-                sh 'mvn clean package -T 1C -DskipTests=false'
+                dir("${env.APP_DIR}") {
+                    sh 'mvn clean package -T 1C -DskipTests=false'
+                }
             }
         }
 
@@ -78,12 +77,14 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'Sonar', variable: 'SONAR_LOGIN')]) {
                     withSonarQubeEnv('SonarQube') {
-                        sh '''
-                            mvn sonar:sonar \
-                                -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-                                -Dsonar.host.url=$SONAR_HOST_URL \
-                                -Dsonar.login=$SONAR_LOGIN
-                        '''
+                        dir("${env.APP_DIR}") {
+                            sh '''
+                                mvn sonar:sonar \
+                                    -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+                                    -Dsonar.host.url=$SONAR_HOST_URL \
+                                    -Dsonar.login=$SONAR_LOGIN
+                            '''
+                        }
                     }
                 }
             }
@@ -91,25 +92,31 @@ pipeline {
 
         stage('Trivy Scan') {
             steps {
-                sh '''
-                    docker build -t boardgame-temp .
-                    trivy image --exit-code 0 --severity HIGH,CRITICAL boardgame-temp
-                '''
+                dir("${env.APP_DIR}") {
+                    sh '''
+                        docker build -t boardgame-temp .
+                        trivy image --exit-code 0 --severity HIGH,CRITICAL boardgame-temp
+                    '''
+                }
             }
         }
 
         stage('OWASP Dependency Check') {
             steps {
-                sh '''
-                    mkdir -p owasp-report
-                    dependency-check.sh --project "BoardGame" --scan ./ --out ./owasp-report
-                '''
+                dir("${env.APP_DIR}") {
+                    sh '''
+                        mkdir -p owasp-report
+                        dependency-check.sh --project "BoardGame" --scan ./ --out ./owasp-report
+                    '''
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $DOCKER_IMAGE:$BUILD_NUMBER .'
+                dir("${env.APP_DIR}") {
+                    sh 'docker build -t $DOCKER_IMAGE:$BUILD_NUMBER .'
+                }
             }
         }
 
