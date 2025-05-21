@@ -103,31 +103,17 @@ pipeline {
 
         stage('OWASP Dependency Check') {
             steps {
-                script {
-                    def dcHome = tool name: 'DC-OWASP', type: 'DependencyCheckInstallation'
-                    dir("${env.APP_DIR}") {
-                        sh """
-                            mkdir -p owasp-report
-                            ${dcHome}/dependency-check.sh \
-                                --project "BoardGame" \
-                                --scan ./ \
-                                --out ./owasp-report
-                        """
-                    }
+                dir("${env.APP_DIR}") {
+                    dependencyCheck additionalArguments: '--format HTML --format XML --scan ./ --out owasp-report', odcInstallation: 'DC-OWASP'
+                    dependencyCheckPublisher pattern: 'owasp-report/dependency-check-report.xml'
+
+                    publishHTML(target: [
+                        reportDir: 'owasp-report',
+                        reportFiles: 'dependency-check-report.html',
+                        reportName: 'OWASP Dependency Report',
+                        keepAll: true
+                    ])
                 }
-            }
-        }
-	
-	stage('Publish OWASP Report') {
-            steps {
-                publishHTML(target: [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: "${env.APP_DIR}/owasp-report",
-                    reportFiles: 'dependency-check-report.html',
-                    reportName: 'OWASP Dependency Check Report'
-                ])
             }
         }
 
@@ -158,7 +144,6 @@ pipeline {
             steps {
                 dir('ansible') {
                     script {
-                        // Inject EC2 IP dynamically into inventory.ini
                         sh """
                             echo '[web]' > inventory.ini
                             echo '${env.INSTANCE_IP} ansible_user=ubuntu' >> inventory.ini
