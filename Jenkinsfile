@@ -101,21 +101,13 @@ pipeline {
             }
         }
 
-        stage('OWASP Dependency Check') {
-            steps {
-                dir("${env.APP_DIR}") {
-                    dependencyCheck additionalArguments: '--format HTML --format XML --scan ./ --out owasp-report', odcInstallation: 'DC-OWASP'
-                    dependencyCheckPublisher pattern: 'owasp-report/dependency-check-report.xml'
-
-                    publishHTML(target: [
-                        reportDir: 'owasp-report',
-                        reportFiles: 'dependency-check-report.html',
-                        reportName: 'OWASP Dependency Report',
-                        keepAll: true
-                    ])
-                }
+        stage("OWASP Dependency Check") {
+ 	    steps {
+                dependencyCheck additionalArguments: '--scan ./', odcInstallation: 'DC-OWASP'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
+
 
         stage('Build Docker Image') {
             steps {
