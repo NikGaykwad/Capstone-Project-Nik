@@ -7,3 +7,5 @@ com/javaproject/beans/ErrorMessage.class
 com/javaproject/DatabaseServiceProjectApplication.class
 com/javaproject/beans/BoardGame.class
 com/javaproject/security/LoggingAccessDeniedHandler.class
+com/javaproject/security/JwtAuthenticationFilter.class
+com/javaproject/security/CustomLogoutHandler.class

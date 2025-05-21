@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.javaproject.TestController
 -------------------------------------------------------------------------------
-Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.148 s - in com.javaproject.TestController
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.021 s - in com.javaproject.TestController

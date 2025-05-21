@@ -12,6 +12,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
+import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 public class SecurityConfig {
@@ -32,7 +33,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) 
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
             throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
@@ -42,12 +43,12 @@ public class SecurityConfig {
         http.csrf().disable() // CSRF protection (can be enabled for form-based apps)
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
-            .authorizeHttpRequests()
-            .requestMatchers("/admin/**").hasRole("ADMIN")
-            .requestMatchers("/user/**").hasAnyRole("USER", "MANAGER")
-            .requestMatchers("/secured/**").authenticated()
-            .requestMatchers("/h2-console/**").permitAll()
-            .requestMatchers("/", "/public/**").permitAll()
+            .authorizeRequests()
+			.antMatchers("/admin/**").hasRole("ADMIN")
+			.antMatchers("/user/**").hasAnyRole("USER", "MANAGER")
+			.antMatchers("/secured/**").authenticated()
+			.antMatchers("/h2-console/**").permitAll()
+			.antMatchers("/", "/public/**").permitAll()
             .and()
             .addFilterBefore(new JwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
             .logout().logoutUrl("/logout").addLogoutHandler(new CustomLogoutHandler())
@@ -57,4 +58,3 @@ public class SecurityConfig {
         return http.build();
     }
 }
-
