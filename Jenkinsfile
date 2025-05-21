@@ -103,12 +103,31 @@ pipeline {
 
         stage('OWASP Dependency Check') {
             steps {
-                dir("${env.APP_DIR}") {
-                    sh '''
-                        mkdir -p owasp-report
-                        dependency-check.sh --project "BoardGame" --scan ./ --out ./owasp-report
-                    '''
+                script {
+                    def dcHome = tool name: 'DC-OWASP', type: 'DependencyCheckInstallation'
+                    dir("${env.APP_DIR}") {
+                        sh """
+                            mkdir -p owasp-report
+                            ${dcHome}/dependency-check.sh \
+                                --project "BoardGame" \
+                                --scan ./ \
+                                --out ./owasp-report
+                        """
+                    }
                 }
+            }
+        }
+	
+	stage('Publish OWASP Report') {
+            steps {
+                publishHTML(target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: "${env.APP_DIR}/owasp-report",
+                    reportFiles: 'dependency-check-report.html',
+                    reportName: 'OWASP Dependency Check Report'
+                ])
             }
         }
 
