@@ -4,7 +4,7 @@ locals {
   subnet_id        = "subnet-04d562ce923deb26a"
   ssh_user         = "ubuntu"
   key_name         = "lab1"
-  private_key_path = "/var/lib/jenkins/.ssh/lab1.pem"  # Path of the key
+  private_key_path = "/var/lib/jenkins/.ssh/lab1.pem"
 }
 
 # AWS provider block
@@ -14,7 +14,7 @@ provider "aws" {
 
 # Security Group for EC2
 resource "aws_security_group" "web_sg" {
-  name   = "terraform-iac"  
+  name   = "terraform-iac"
   vpc_id = local.vpc_id
 
   ingress {
@@ -27,6 +27,13 @@ resource "aws_security_group" "web_sg" {
   ingress {
     from_port   = 80
     to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -46,38 +53,23 @@ resource "aws_security_group" "web_sg" {
   }
 }
 
-# EC2 instance resource
-resource "aws_instance" "web_server" {
-  ami                         = "ami-0e35ddab05955cf57"
-  instance_type               = "t2.small"
+# EC2 instance
+resource "aws_instance" "web" {
+  ami                         = "ami-03bb6d83c60fc5f7c"  # Ubuntu 22.04 (ap-south-1)
+  instance_type               = "t2.micro"
   subnet_id                   = local.subnet_id
-  associate_public_ip_address = true
-  vpc_security_group_ids      = [aws_security_group.web_sg.id] 
+  vpc_security_group_ids      = [aws_security_group.web_sg.id]
   key_name                    = local.key_name
+  associate_public_ip_address = true
 
   tags = {
-    Name = "Boardgame-WebApp-Server"
+    Name = "boardgame-web"
   }
+}
 
-  # Remote exec provisioner to install Java
-  provisioner "remote-exec" {
-    inline = [
-      "sudo apt update -y",
-      "sudo apt install openjdk-17-jdk -y",
-      "sudo mkdir -p /opt/boardgame-app"
-    ]
-
-    connection {
-      type        = "ssh"
-      user        = local.ssh_user
-      private_key = file(local.private_key_path)
-      host        = self.public_ip
-    }
-  }
-
-  # Just a success message
-  provisioner "local-exec" {
-    command = "echo 'Java installed successfully!'"
-  }
+# Output EC2 Public IP
+output "instance_public_ip" {
+  value       = aws_instance.web.public_ip
+  description = "Public IP of the EC2 instance"
 }
 
