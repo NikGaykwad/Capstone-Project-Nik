@@ -143,12 +143,11 @@ pipeline {
                             echo '${env.INSTANCE_IP} ansible_user=ubuntu' >> inventory.ini
                         """
                     }
-                    withCredentials([sshUserPrivateKey(
-                        credentialsId: 'SSH-Key',
-                        keyFileVariable: 'SSH_KEY'
-                    )]) {
+                    withCredentials([string(credentialsId: 'EC2-SSH-Secret', variable: 'KEY_CONTENT')]) {
                         sh '''
-                            ansible-playbook -i inventory.ini ansible-deploy.yml --private-key $SSH_KEY
+                            echo "$KEY_CONTENT" > ec2_key.pem
+                            chmod 600 ec2_key.pem
+                            ansible-playbook -i inventory.ini ansible-deploy.yml --private-key ec2_key.pem
                         '''
                     }
                 }
