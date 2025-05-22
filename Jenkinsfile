@@ -143,11 +143,10 @@ pipeline {
                             echo '${env.INSTANCE_IP} ansible_user=ubuntu' >> inventory.ini
                         """
                     }
-                    withCredentials([string(credentialsId: 'EC2-SSH-Secret', variable: 'KEY_CONTENT')]) {
+                    // Inject SSH key using ssh-agent
+                    sshagent (credentials: ['EC2-SSH-Secret']) {
                         sh '''
-                            echo "$KEY_CONTENT" > ec2_key.pem
-                            chmod 600 ec2_key.pem
-                            ansible-playbook -i inventory.ini ansible-deploy.yml --private-key ec2_key.pem
+                            ansible-playbook -i inventory.ini ansible-deploy.yml
                         '''
                     }
                 }
