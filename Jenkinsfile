@@ -102,12 +102,14 @@ pipeline {
         }
 
         stage("OWASP Dependency Check") {
- 	    steps {
-                dependencyCheck additionalArguments: '--scan ./', odcInstallation: 'DC-OWASP'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            steps {
+                dir("${env.APP_DIR}") {
+                    sh 'mkdir -p owasp-report'
+                }
+                dependencyCheck additionalArguments: '--format XML --project BoardGame --scan app/BoardGame --out app/BoardGame/owasp-report', odcInstallation: 'DC-OWASP'
+                dependencyCheckPublisher pattern: '**/owasp-report/dependency-check-report.xml'
             }
         }
-
 
         stage('Build Docker Image') {
             steps {
