@@ -44,11 +44,12 @@ public class SecurityConfig {
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
             .authorizeRequests()
-			.antMatchers("/admin/**").hasRole("ADMIN")
-			.antMatchers("/user/**").hasAnyRole("USER", "MANAGER")
-			.antMatchers("/secured/**").authenticated()
-			.antMatchers("/h2-console/**").permitAll()
-			.antMatchers("/", "/public/**").permitAll()
+                        .antMatchers("/admin/**").hasRole("ADMIN")
+                        .antMatchers("/user/**").hasAnyRole("USER", "MANAGER")
+                        .antMatchers("/secured/**").authenticated()
+                        .antMatchers("/h2-console/**").permitAll()
+                        .antMatchers("/actuator/**").permitAll() // 👈 ADD THIS LINE
+                        .antMatchers("/", "/public/**").permitAll()
             .and()
             .addFilterBefore(new JwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
             .logout().logoutUrl("/logout").addLogoutHandler(new CustomLogoutHandler())
@@ -58,3 +59,4 @@ public class SecurityConfig {
         return http.build();
     }
 }
+
