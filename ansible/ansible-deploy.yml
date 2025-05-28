@@ -37,6 +37,13 @@
         ports:
           - "8080:8080"
 
+
+    - name: Create Prometheus directory
+      file:
+        path: /usr/local/prometheus
+        state: directory
+        mode: '0755'
+
     # Install & Configure Node Exporter on Web Server
     - name: Download Node Exporter
       get_url:
