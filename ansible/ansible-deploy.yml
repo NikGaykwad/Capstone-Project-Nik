@@ -53,7 +53,7 @@
       command: mv /usr/local/node_exporter-{{ node_exporter_version }}.linux-amd64 /usr/local/node_exporter
 
     - name: Start Node Exporter
-      command: nohup /usr/local/node_exporter/node_exporter &
+      shell: nohup /usr/local/node_exporter/node_exporter > /dev/null 2>&1 &
 
     # Update Prometheus Configuration with Web Server IP
     - name: Update Prometheus config dynamically
