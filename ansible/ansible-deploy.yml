@@ -3,6 +3,8 @@
   vars:
     docker_image: "nikhilg032/boardgame-webapp"
     docker_tag: "{{ lookup('env', 'BUILD_NUMBER') }}"  # Fetches from Jenkins pipeline
+    prometheus_config_path: "/usr/local/prometheus/prometheus.yml"  # Path to Prometheus config
+    node_exporter_version: "1.5.0"
   
   tasks:
     - name: Ensure Docker is installed
@@ -34,4 +36,35 @@
         state: started
         ports:
           - "8080:8080"
+
+    # Install & Configure Node Exporter on Web Server
+    - name: Download Node Exporter
+      get_url:
+        url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+        dest: "/tmp/node_exporter.tar.gz"
+
+    - name: Extract Node Exporter
+      ansible.builtin.unarchive:
+        src: "/tmp/node_exporter.tar.gz"
+        dest: "/usr/local/"
+        remote_src: yes
+
+    - name: Move Node Exporter Binary
+      command: mv /usr/local/node_exporter-{{ node_exporter_version }}.linux-amd64 /usr/local/node_exporter
+
+    - name: Start Node Exporter
+      command: nohup /usr/local/node_exporter/node_exporter &
+
+    # Update Prometheus Configuration with Web Server IP
+    - name: Update Prometheus config dynamically
+      template:
+        src: prometheus.yml.j2
+        dest: "{{ prometheus_config_path }}"
+      notify: Restart Prometheus
+
+  handlers:
+    - name: Restart Prometheus
+      service:
+        name: prometheus
+        state: restarted
 
