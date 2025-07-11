@@ -4,7 +4,7 @@ pipeline {
     environment {
         AWS_REGION = 'ap-south-1'
         SONAR_PROJECT_KEY = 'sonar'
-        SONAR_HOST_URL = 'http://3.6.161.77:9000/'
+        SONAR_HOST_URL = 'http://65.1.132.7:9000/'
         DOCKER_IMAGE = "nikhilg032/boardgame-webapp"
         DOCKER_CREDENTIALS_ID = 'Docker-Access-Token'
         APP_DIR = 'app/BoardGame'
