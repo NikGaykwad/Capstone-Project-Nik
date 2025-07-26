@@ -1,0 +1,15 @@
+global:
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'nikhilgaykwad176@gmail.com'
+  smtp_auth_username: 'nikhilgaykwad176@gmail.com'
+  smtp_auth_password: 'rmzk cqip mhct bvyw'  # 🔒 Replace this
+
+route:
+  receiver: 'Nikhil-DevOps'
+
+receivers:
+  - name: 'Nikhil-DevOps'
+    email_configs:
+      - to: 'nikhilgaykwad176@gmail.com'
+        send_resolved: true
+

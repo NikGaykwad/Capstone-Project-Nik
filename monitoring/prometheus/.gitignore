@@ -1,0 +1,13 @@
+# Ignore binaries and data
+prometheus
+promtool
+data/
+
+# Ignore exporters
+node_exporter/
+blackbox_exporter/
+
+# Optional: backup or log files
+*.bak
+*.log
+
